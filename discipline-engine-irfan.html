@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Discipline Engine — by Irfan Hossain Nishat</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b0b0b;
+  --surface:#131313;
+  --surface2:#1a1a1a;
+  --border:#252525;
+  --red:#ff2d2d;
+  --red2:#ff6b6b;
+  --orange:#ff7a00;
+  --green:#00e676;
+  --yellow:#ffd600;
+  --text:#f0f0f0;
+  --muted:#666;
+  --danger-bg:#1a0505;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+h1,h2,h3,.stat-num,.timer{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+
+/* ── Layout ── */
+#app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+@media(max-width:700px){#app{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+/* ── Sidebar ── */
+#sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 20px;display:flex;flex-direction:column;gap:20px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--red);line-height:1}
+.logo span{display:block;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:300;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--muted);transition:all 0.2s;border:1px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--danger-bg);border-color:var(--red);color:var(--red2)}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:14px;background:linear-gradient(135deg,#1a0a00,#1a0505);border:1px solid #ff7a0033;border-radius:10px}
+.sf-label{font-size:10px;color:var(--orange);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.sf-text{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.6}
+.premium-btn{width:100%;margin-top:10px;padding:8px;border-radius:7px;background:var(--orange);border:none;color:#000;font-weight:600;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:opacity 0.2s}
+.premium-btn:hover{opacity:0.85}
+
+/* ── Main ── */
+#main{padding:28px;overflow-y:auto}
+.page{display:none}
+.page.active{display:block}
+
+/* ── Stats row ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+.stat-card.danger{background:var(--danger-bg);border-color:#ff2d2d44}
+.stat-card.success{background:#001a08;border-color:#00e67644}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px}
+.stat-num{font-size:42px;line-height:1;color:var(--text)}
+.stat-card.danger .stat-num{color:var(--red)}
+.stat-card.success .stat-num{color:var(--green)}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.stat-badge{position:absolute;top:12px;right:12px;font-size:18px}
+
+/* ── Streak display ── */
+.streak-wrap{text-align:center;padding:20px;position:relative}
+#streak-fire{font-size:52px;display:block;margin-bottom:4px;transition:all 0.3s}
+#streak-num{font-family:'Bebas Neue',sans-serif;font-size:80px;line-height:1;color:var(--orange)}
+#streak-label{font-size:13px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.crack{animation:crack 0.6s ease forwards}
+@keyframes crack{0%{transform:scale(1)}20%{transform:scale(1.3) rotate(-5deg)}50%{transform:scale(0.8) rotate(5deg)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+.shake{animation:shake 0.5s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+
+/* ── Goals ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--text)}
+.add-btn{padding:8px 16px;border-radius:8px;background:var(--red);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.add-btn:hover{background:#cc0000}
+.goals-list{display:flex;flex-direction:column;gap:10px}
+.goal-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;transition:border-color 0.2s}
+.goal-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--border)}
+.goal-card.active::before{background:var(--orange)}
+.goal-card.done::before{background:var(--green)}
+.goal-card.failed::before{background:var(--red)}
+.goal-card.failed{background:var(--danger-bg);border-color:#ff2d2d33}
+.goal-info{flex:1;min-width:0}
+.goal-title{font-weight:600;font-size:15px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.goal-card.failed .goal-title{text-decoration:line-through;color:var(--red2)}
+.goal-card.done .goal-title{color:var(--green)}
+.goal-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
+.goal-timer{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--orange)}
+.goal-timer.urgent{color:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.goal-timer.done{color:var(--green)}
+.goal-timer.failed{color:var(--red)}
+.goal-actions{display:flex;gap:8px}
+.g-btn{padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;white-space:nowrap}
+.g-btn.complete{border-color:var(--green);color:var(--green)}
+.g-btn.complete:hover{background:#00e67622}
+.g-btn.fail{border-color:var(--red);color:var(--red)}
+.g-btn.fail:hover{background:#ff2d2d22}
+.g-btn.delete{border-color:#333;color:var(--muted)}
+.g-btn.delete:hover{border-color:var(--red);color:var(--red)}
+.penalty-tag{font-size:10px;padding:2px 8px;border-radius:4px;background:#1a0505;border:1px solid #ff2d2d44;color:var(--red2);font-weight:500;white-space:nowrap}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:12px;opacity:0.4}
+.empty-text{font-size:14px;line-height:1.7}
+
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:460px;position:relative}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;margin-bottom:20px;color:var(--red)}
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:var(--red)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.penalty-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.penalty-opt{padding:7px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.penalty-opt.selected{border-color:var(--red);background:#1a0505;color:var(--red2)}
+.modal-footer{display:flex;gap:10px;margin-top:24px}
+.modal-cancel{flex:1;padding:11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px}
+.modal-save{flex:2;padding:11px;border-radius:8px;border:none;background:var(--red);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600}
+.modal-save:hover{background:#cc0000}
+
+/* ── Shame Modal ── */
+.shame-box{background:#0d0000;border:1px solid var(--red);border-radius:10px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red2);line-height:1.7;margin:14px 0;white-space:pre-wrap}
+.copy-btn{width:100%;padding:11px;border-radius:8px;border:1px solid var(--red);background:transparent;color:var(--red2);cursor:pointer;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.copy-btn:hover{background:#1a0505}
+.copy-btn.copied{border-color:var(--green);color:var(--green);background:#001a08}
+
+/* ── Failure animation overlay ── */
+#fail-overlay{display:none;position:fixed;inset:0;background:rgba(255,0,0,0.15);z-index:200;pointer-events:none;animation:failFlash 1s ease forwards}
+@keyframes failFlash{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0}}
+
+/* ── History page ── */
+.history-item{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);margin-bottom:8px}
+.hi-icon{font-size:18px;width:32px;text-align:center}
+.hi-text{flex:1;font-size:14px}
+.hi-time{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.hi-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.hi-badge.fail{background:#1a0505;color:var(--red);border:1px solid var(--red);}
+.hi-badge.done{background:#001a08;color:var(--green);border:1px solid var(--green);}
+
+/* ── Progress bars ── */
+.prog-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.prog-label{font-size:13px;min-width:100px;color:var(--muted)}
+.prog-bar-wrap{flex:1;background:var(--surface2);border-radius:4px;height:8px;overflow:hidden}
+.prog-bar{height:100%;border-radius:4px;transition:width 0.5s ease}
+.prog-val{font-size:13px;font-family:'JetBrains Mono',monospace;min-width:36px;text-align:right;color:var(--text)}
+
+/* ── Coins ── */
+.coins-display{display:flex;align-items:baseline;gap:8px;margin-bottom:16px}
+.coins-num{font-family:'Bebas Neue',sans-serif;font-size:56px;color:var(--yellow)}
+.coins-label{font-size:14px;color:var(--muted)}
+.coin-log{font-size:13px;color:var(--muted);line-height:2;font-family:'JetBrains Mono',monospace}
+.coin-log span.lose{color:var(--red)}
+.coin-log span.earn{color:var(--green)}
+
+/* ── Friend mode ── */
+.friend-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px}
+.friend-name{font-weight:600;font-size:16px;margin-bottom:4px}
+.friend-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:12px}
+.friend-status{display:flex;align-items:center;gap:8px;font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.dot.waiting{background:var(--orange)}
+.dot.failed{background:var(--red)}
+
+/* ── Level bar ── */
+.level-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.level-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+.level-name{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--orange)}
+.level-num{font-size:13px;color:var(--muted)}
+.level-bar-wrap{background:var(--surface2);border-radius:6px;height:10px;overflow:hidden;margin-bottom:8px}
+.level-bar{height:100%;background:linear-gradient(90deg,var(--orange),var(--red));border-radius:6px;transition:width 0.5s ease}
+.level-sub{font-size:12px;color:var(--muted)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── Notifications ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:14px;z-index:300;transform:translateY(100px);opacity:0;transition:all 0.3s;max-width:300px;line-height:1.5}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.danger{border-color:var(--red);background:var(--danger-bg);color:var(--red2)}
+#toast.success{border-color:var(--green);background:#001a08;color:var(--green)}
+
+/* ── Friend modal extra ── */
+.gen-code-display{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;letter-spacing:4px;color:var(--yellow);text-align:center;margin:12px 0}
+</style>
+</head>
+<body>
+
+<div id="fail-overlay"></div>
+
+<div id="app">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div>
+      <div class="logo">DISCIPLINE<span>engine — by Irfan Nishat</span></div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:4px">
+      <div class="nav-item active" onclick="showPage('dashboard')"><div class="nav-icon">⚡</div>Dashboard</div>
+      <div class="nav-item" onclick="showPage('goals')"><div class="nav-icon">🎯</div>My Goals</div>
+      <div class="nav-item" onclick="showPage('penalties')"><div class="nav-icon">💀</div>Penalty Log</div>
+      <div class="nav-item" onclick="showPage('shame')"><div class="nav-icon">😭</div>Shame Mode</div>
+      <div class="nav-item" onclick="showPage('friends')"><div class="nav-icon">👥</div>Friend Enforcement</div>
+      <div class="nav-item" onclick="showPage('history')"><div class="nav-icon">📜</div>History</div>
+    </nav>
+    <div style="flex:1"></div>
+    <div class="sidebar-footer">
+      <div class="sf-label">👨‍💻 Creator</div>
+      <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:2px">Irfan Hossain Nishat</div>
+      <div class="sf-text" style="margin-bottom:8px">Feni Government College (FGC)<br>Class of 2026</div>
+      <div style="border-top:1px solid #ffffff11;padding-top:8px;margin-top:4px">
+      <div class="sf-label">🔥 Premium</div>
+      <div class="sf-text">Real app blocking, bKash deduction, unlimited friends & analytics. (Taka besi Hoile Wait koro T-T 😭) </div>
+      <button class="premium-btn" onclick="showPremium()">Upgrade — ৳99/month</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div style="margin-bottom:24px">
+        <h1 style="font-size:28px;margin-bottom:4px">Your <span style="color:var(--red)">Discipline</span> Score</h1>
+        <p style="font-size:14px;color:var(--muted)">Fail once and everything collapses. No excuses.</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card success">
+          <div class="stat-label">Current Streak</div>
+          <div class="stat-num" id="dash-streak">0</div>
+          <div class="stat-sub">days in a row</div>
+          <div class="stat-badge">🔥</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">Total Failures</div>
+          <div class="stat-num" id="dash-fails">0</div>
+          <div class="stat-sub">times you gave up</div>
+          <div class="stat-badge">💀</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Penalty Coins</div>
+          <div class="stat-num" id="dash-coins" style="color:var(--yellow)">0</div>
+          <div class="stat-sub">coins deducted</div>
+          <div class="stat-badge">🪙</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed</div>
+          <div class="stat-num" id="dash-done" style="color:var(--green)">0</div>
+          <div class="stat-sub">goals crushed</div>
+          <div class="stat-badge">✅</div>
+        </div>
+      </div>
+
+      <!-- Level -->
+      <div class="level-section">
+        <div class="level-header">
+          <div class="level-name" id="level-name">ROOKIE</div>
+          <div class="level-num">Level <span id="level-num">1</span></div>
+        </div>
+        <div class="level-bar-wrap"><div class="level-bar" id="level-bar" style="width:10%"></div></div>
+        <div class="level-sub" id="level-sub">Complete goals to level up. Fail and you drop back down.</div>
+      </div>
+
+      <!-- Active goals mini -->
+      <div class="section-header">
+        <div class="section-title">Active Goals</div>
+        <button class="add-btn" onclick="showPage('goals')">Manage Goals →</button>
+      </div>
+      <div id="dash-goals-list">
+        <div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-text">No active goals.<br>Add one to start your punishment journey.</div></div>
+      </div>
+      <div style="margin-top:32px;background:#131313;border:1px solid #252525;border-radius:14px;padding:22px;display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+        <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#ff2d2d,#ff7a00);display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:20px;color:#fff;flex-shrink:0">IN</div>
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:16px;font-weight:600;color:#f0f0f0;margin-bottom:2px">Irfan Hossain Nishat</div>
+          <div style="font-size:12px;color:#666;margin-bottom:6px">Feni Government College (FGC) &amp; Student Developer</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);line-height:1.7">Built this because I was tired of procrastinating. (pora lekha off kori disi 😭)<br>No fancy team. No big budget. Just discipline — and code.<br> Special Thanks To Big Brother for Help <3</div>
+        </div>
+        <div style="background:#1a0505;border:1px solid #ff2d2d33;border-radius:10px;padding:12px 18px;text-align:center;flex-shrink:0">
+          <div style="font-family:Bebas Neue,sans-serif;font-size:13px;color:#ff2d2d;letter-spacing:1px;margin-bottom:4px">MADE BY</div>
+          <div style="font-size:18px;font-family:Bebas Neue,sans-serif;color:#fff;letter-spacing:2px">IRFAN NISHAT</div>
+          <div style="font-size:10px;color:#666;margin-top:4px;letter-spacing:1px">FGC · 2025</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOALS -->
+    <div id="page-goals" class="page">
+      <div class="section-header" style="margin-bottom:20px">
+        <div>
+          <h1 style="font-size:28px;margin-bottom:4px">My Goals</h1>
+          <p style="font-size:13px;color:var(--muted)">Set a goal. Miss it. Face the consequences.</p>
+        </div>
+        <button class="add-btn" onclick="openAddGoal()">+ Add Goal</button>
+      </div>
+
+      <!-- Progress overview -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:14px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Today's Progress</div>
+        <div class="prog-row">
+          <div class="prog-label">Completion</div>
+          <div class="prog-bar-wrap"><div class="prog-bar" id="prog-complete" style="width:0%;background:var(--green)"></div></div>
+          <div class="prog-val" id="prog-complete-val">0%</div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-label">Failure rate</div>
+          <div class="prog-bar-wrap"><div class="prog-bar" id="prog-fail" style="width:0%;background:var(--red)"></div></div>
+          <div class="prog-val" id="prog-fail-val">0%</div>
+        </div>
+      </div>
+
+      <div class="goals-list" id="goals-list">
+        <div class="empty-state"><div class="empty-icon">😴</div><div class="empty-text">No goals yet. Typical.<br>Add something you actually need to do.</div></div>
+      </div>
+    </div>
+
+    <!-- PENALTIES -->
+    <div id="page-penalties" class="page">
+      <div style="margin-bottom:24px">
+        <h1 style="font-size:28px;margin-bottom:4px">Penalty <span style="color:var(--red)">Log</span></h1>
+        <p style="font-size:13px;color:var(--muted)">Every failure recorded. No forgetting. No forgiveness.</p>
+      </div>
+      <div class="coins-display">
+        <div class="coins-num" id="coins-big">0</div>
+        <div class="coins-label">penalty coins lost</div>
+      </div>
+      <div class="coin-log" id="coin-log">No penalties yet. Stay that way.</div>
+    </div>
+
+    <!-- SHAME MODE -->
+    <div id="page-shame" class="page">
+      <div style="margin-bottom:24px">
+        <h1 style="font-size:28px;margin-bottom:4px">😭 Shame <span style="color:var(--red)">Mode</span></h1>
+        <p style="font-size:13px;color:var(--muted)">Generate a shame message. Post it publicly. Face society.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+        <div class="form-group">
+          <label class="form-label">Your name</label>
+          <input type="text" class="form-input" id="shame-name" placeholder="e.g. Irfan" value=""/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">What did you fail at?</label>
+          <input type="text" class="form-input" id="shame-goal-text" placeholder="e.g. Study for 2 hours"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Platform to shame on</label>
+          <div class="penalty-options" id="shame-platform-opts">
+            <button class="penalty-opt selected" onclick="selectOpt(this,'shame-platform-opts')">WhatsApp Group</button>
+            <button class="penalty-opt" onclick="selectOpt(this,'shame-platform-opts')">Facebook</button>
+            <button class="penalty-opt" onclick="selectOpt(this,'shame-platform-opts')">Twitter/X</button>
+            <button class="penalty-opt" onclick="selectOpt(this,'shame-platform-opts')">Private Note</button>
+          </div>
+        </div>
+        <button class="add-btn" style="width:100%;padding:11px;font-size:14px" onclick="generateShame()">Generate Shame Message 💀</button>
+      </div>
+      <div id="shame-output" style="display:none">
+        <div class="shame-box" id="shame-text"></div>
+        <button class="copy-btn" id="copy-shame-btn" onclick="copyShame()">📋 Copy & Post This</button>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">The pain of public shame > the pleasure of procrastinating</div>
+      </div>
+    </div>
+
+    <!-- FRIENDS -->
+    <div id="page-friends" class="page">
+      <div style="margin-bottom:24px">
+        <h1 style="font-size:28px;margin-bottom:4px">👥 Friend <span style="color:var(--red)">Enforcement</span></h1>
+        <p style="font-size:13px;color:var(--muted)">Your friend approves your work. If they say NO — penalty triggered.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Add an Enforcer</div>
+        <div class="form-row">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Friend's name</label>
+            <input type="text" class="form-input" id="friend-name-input" placeholder="e.g. Rahim bhai"/>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Their number/ID</label>
+            <input type="text" class="form-input" id="friend-id-input" placeholder="01XXXXXXXXX"/>
+          </div>
+        </div>
+        <button class="add-btn" style="margin-top:12px" onclick="addFriend()">Add Enforcer</button>
+      </div>
+      <div id="friends-list"></div>
+
+      <div style="background:#0a0a00;border:1px solid #ffd60033;border-radius:12px;padding:20px;margin-top:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--yellow);margin-bottom:8px">📨 How Friend Enforcement Works</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:2">
+          1. Add your friend as an Enforcer<br>
+          2. Generate a check-in message for them<br>
+          3. They reply YES (you did it) or NO (you failed)<br>
+          4. You mark their response — if NO, penalty fires<br>
+          5. They keep you honest. You can't lie to yourself.
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="page-history" class="page">
+      <div style="margin-bottom:24px">
+        <h1 style="font-size:28px;margin-bottom:4px">📜 Full <span style="color:var(--red)">History</span></h1>
+        <p style="font-size:13px;color:var(--muted)">Every action logged. The record never lies.</p>
+      </div>
+      <div id="history-list">
+        <div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nothing yet. Start a goal to build your record.</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD GOAL MODAL -->
+<div class="modal-overlay" id="add-goal-modal">
+  <div class="modal">
+    <div class="modal-title">⚡ New Goal Contract</div>
+    <div class="form-group">
+      <label class="form-label">Goal Title</label>
+      <input type="text" class="form-input" id="goal-title-input" placeholder="e.g. Study Physics 2 hours"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Deadline (hours from now)</label>
+        <input type="number" class="form-input" id="goal-hours-input" placeholder="e.g. 4" min="0.1" step="0.1" value="2"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Penalty coins if failed</label>
+        <input type="number" class="form-input" id="goal-penalty-input" placeholder="e.g. 50" min="1" value="50"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Punishment Type</label>
+      <div class="penalty-options" id="punishment-opts">
+        <button class="penalty-opt selected" onclick="selectOpt(this,'punishment-opts')">Coin Deduction</button>
+        <button class="penalty-opt" onclick="selectOpt(this,'punishment-opts')">Public Shame</button>
+        <button class="penalty-opt" onclick="selectOpt(this,'punishment-opts')">Streak Destroyed</button>
+        <button class="penalty-opt" onclick="selectOpt(this,'punishment-opts')">All of the Above</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal('add-goal-modal')">Cancel</button>
+      <button class="modal-save" onclick="saveGoal()">Lock In This Goal 🔒</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHAME MODAL (auto-triggered on fail) -->
+<div class="modal-overlay" id="shame-modal">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--red)">💀 YOU FAILED</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:14px" id="fail-modal-text">You didn't complete your goal. The penalty has been applied.</p>
+    <div class="shame-box" id="auto-shame-text" style="font-size:12px"></div>
+    <button class="copy-btn" id="auto-copy-btn" onclick="copyAutoShame()" style="margin-top:12px">📋 Copy Shame Message</button>
+    <div class="modal-footer" style="margin-top:12px">
+      <button class="modal-save" onclick="closeModal('shame-modal')" style="background:#333;color:var(--text)">Accept Punishment</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREMIUM MODAL -->
+<div class="modal-overlay" id="premium-modal">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--orange)">🔥 Premium Features</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"><span style="color:var(--orange)">📱</span> Real app blocking (YouTube, games, social media)</div>
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"><span style="color:var(--orange)">💸</span> bKash/Nagad auto-deduction on failure</div>
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"><span style="color:var(--orange)">👥</span> Unlimited friend enforcers</div>
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"><span style="color:var(--orange)">📊</span> Weekly analytics & failure reports</div>
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"><span style="color:var(--orange)">🔔</span> WhatsApp shame auto-post</div>
+    </div>
+    <div style="text-align:center;font-size:28px;font-family:'Bebas Neue',sans-serif;color:var(--orange);margin-bottom:16px">৳99 / month</div>
+    <button class="premium-btn" style="padding:14px;font-size:15px" onclick="closeModal('premium-modal')">Coming Soon — Get Notified</button>
+    <button class="modal-cancel" style="width:100%;margin-top:8px;padding:10px;cursor:pointer" onclick="closeModal('premium-modal')">Maybe later</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+let state = {
+  goals: [],
+  streak: 0,
+  lastStreakDate: null,
+  totalFails: 0,
+  totalDone: 0,
+  penaltyCoins: 0,
+  coinLog: [],
+  history: [],
+  friends: [],
+  xp: 0,
+};
+
+const LEVELS = [
+  {name:'ROOKIE',min:0},
+  {name:'STARTER',min:100},
+  {name:'FIGHTER',min:300},
+  {name:'GRINDER',min:600},
+  {name:'WARRIOR',min:1000},
+  {name:'TITAN',min:1500},
+  {name:'LEGEND',min:2200},
+  {name:'GODMODE',min:3000},
+];
+
+function load(){
+  const saved = localStorage.getItem('discipline_state');
+  if(saved){ try{ state = {...state,...JSON.parse(saved)}; } catch(e){} }
+}
+function save(){
+  localStorage.setItem('discipline_state', JSON.stringify(state));
+}
+load();
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const navItems = document.querySelectorAll('.nav-item');
+  const pageMap = {'dashboard':0,'goals':1,'penalties':2,'shame':3,'friends':4,'history':5};
+  if(pageMap[id]!==undefined) navItems[pageMap[id]].classList.add('active');
+  renderAll();
+}
+
+function renderAll(){
+  renderDashboard();
+  renderGoals();
+  renderPenalties();
+  renderHistory();
+  renderFriends();
+  updateTimers();
+}
+
+function getLevel(){
+  const xp = state.xp;
+  let lv = 0;
+  for(let i=0;i<LEVELS.length;i++){ if(xp>=LEVELS[i].min) lv=i; }
+  return { level: lv+1, name: LEVELS[lv].name, xp,
+    nextMin: LEVELS[lv+1]?.min||9999,
+    currentMin: LEVELS[lv].min,
+    progress: lv+1<LEVELS.length ? Math.round((xp-LEVELS[lv].min)/(LEVELS[Math.min(lv+1,LEVELS.length-1)].min-LEVELS[lv].min)*100) : 100
+  };
+}
+
+function renderDashboard(){
+  document.getElementById('dash-streak').textContent = state.streak;
+  document.getElementById('dash-fails').textContent = state.totalFails;
+  document.getElementById('dash-coins').textContent = state.penaltyCoins;
+  document.getElementById('dash-done').textContent = state.totalDone;
+  const lv = getLevel();
+  document.getElementById('level-name').textContent = lv.name;
+  document.getElementById('level-num').textContent = lv.level;
+  document.getElementById('level-bar').style.width = lv.progress+'%';
+  document.getElementById('level-sub').textContent = lv.level<LEVELS.length
+    ? `${lv.progress}% to next level · ${lv.nextMin-lv.xp} XP needed`
+    : 'MAX LEVEL — You are a machine.';
+
+  const active = state.goals.filter(g=>g.status==='active');
+  const dl = document.getElementById('dash-goals-list');
+  if(active.length===0){
+    dl.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-text">No active goals.<br>Add one to start your punishment journey.</div></div>';
+  } else {
+    dl.innerHTML = active.map(g=>`
+      <div class="goal-card active" style="margin-bottom:8px">
+        <div class="goal-info">
+          <div class="goal-title">${g.title}</div>
+          <div class="goal-meta">
+            <span class="goal-timer ${timerClass(g)}" id="timer-dash-${g.id}">${getTimeLeft(g)}</span>
+            <span class="penalty-tag">-${g.penalty} coins if failed</span>
+          </div>
+        </div>
+        <div class="goal-actions">
+          <button class="g-btn complete" onclick="completeGoal('${g.id}')">✓ Done</button>
+          <button class="g-btn fail" onclick="failGoal('${g.id}')">✗ Failed</button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function renderGoals(){
+  const list = document.getElementById('goals-list');
+  if(state.goals.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">😴</div><div class="empty-text">No goals yet. Typical.<br>Add something you actually need to do.</div></div>';
+  } else {
+    list.innerHTML = state.goals.map(g=>`
+      <div class="goal-card ${g.status}">
+        <div class="goal-info">
+          <div class="goal-title">${g.title}</div>
+          <div class="goal-meta">
+            <span class="goal-timer ${timerClass(g)} ${g.status!=='active'?g.status:''}" id="timer-${g.id}">${g.status==='active'?getTimeLeft(g):g.status==='done'?'COMPLETED ✓':'FAILED ✗'}</span>
+            <span class="penalty-tag">-${g.penalty} coins</span>
+            <span style="font-size:11px;color:var(--muted)">${g.punishment}</span>
+          </div>
+        </div>
+        <div class="goal-actions">
+          ${g.status==='active'?`
+            <button class="g-btn complete" onclick="completeGoal('${g.id}')">✓ Done</button>
+            <button class="g-btn fail" onclick="failGoal('${g.id}')">✗ Failed</button>
+          `:''}
+          <button class="g-btn delete" onclick="deleteGoal('${g.id}')">🗑</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  const active = state.goals.filter(g=>g.status==='active');
+  const done = state.goals.filter(g=>g.status==='done');
+  const failed = state.goals.filter(g=>g.status==='failed');
+  const total = active.length+done.length+failed.length;
+  const pct = total>0?Math.round(done.length/total*100):0;
+  const fpct = total>0?Math.round(failed.length/total*100):0;
+  document.getElementById('prog-complete').style.width=pct+'%';
+  document.getElementById('prog-complete-val').textContent=pct+'%';
+  document.getElementById('prog-fail').style.width=fpct+'%';
+  document.getElementById('prog-fail-val').textContent=fpct+'%';
+}
+
+function renderPenalties(){
+  document.getElementById('coins-big').textContent = state.penaltyCoins;
+  const log = document.getElementById('coin-log');
+  if(state.coinLog.length===0){
+    log.textContent='No penalties yet. Stay that way.';
+  } else {
+    log.innerHTML = state.coinLog.slice().reverse().map(l=>
+      `<div>${l.time} — <span class="${l.amount<0?'lose':'earn'}">${l.amount<0?'':'+'} ${l.amount} coins</span> — ${l.reason}</div>`
+    ).join('');
+  }
+}
+
+function renderHistory(){
+  const list = document.getElementById('history-list');
+  if(state.history.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nothing yet. Start a goal to build your record.</div></div>';
+    return;
+  }
+  list.innerHTML = state.history.slice().reverse().map(h=>`
+    <div class="history-item">
+      <div class="hi-icon">${h.type==='fail'?'💀':h.type==='done'?'✅':'⚡'}</div>
+      <div class="hi-text">${h.text}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="hi-badge ${h.type}">${h.type==='fail'?'FAILED':'DONE'}</span>
+        <span class="hi-time">${h.time}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderFriends(){
+  const list = document.getElementById('friends-list');
+  if(state.friends.length===0){
+    list.innerHTML='<div class="empty-state" style="padding:24px"><div class="empty-icon">🤝</div><div class="empty-text">No enforcers yet.<br>Add a friend who will hold you accountable.</div></div>';
+    return;
+  }
+  list.innerHTML = state.friends.map(f=>`
+    <div class="friend-card">
+      <div class="friend-name">${f.name}</div>
+      <div class="friend-code">ID: ${f.id} · Code: <strong style="color:var(--yellow)">${f.code}</strong></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="g-btn complete" style="font-size:12px" onclick="friendApprove('${f.code}')">✓ They Said YES</button>
+        <button class="g-btn fail" style="font-size:12px" onclick="friendDeny('${f.code}')">✗ They Said NO</button>
+        <button class="g-btn" style="font-size:12px" onclick="copyFriendMsg('${f.name}')">📨 Copy Check-in Message</button>
+        <button class="g-btn delete" style="font-size:12px" onclick="removeFriend('${f.code}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function timerClass(g){
+  if(g.status!=='active') return '';
+  const left = g.deadline - Date.now();
+  if(left<0) return 'urgent';
+  if(left<1800000) return 'urgent';
+  return '';
+}
+
+function getTimeLeft(g){
+  const left = g.deadline - Date.now();
+  if(left<=0) return 'OVERDUE!';
+  const h = Math.floor(left/3600000);
+  const m = Math.floor((left%3600000)/60000);
+  const s = Math.floor((left%60000)/1000);
+  if(h>0) return `${h}h ${m}m left`;
+  if(m>0) return `${m}m ${s}s left`;
+  return `${s}s left`;
+}
+
+function openAddGoal(){
+  document.getElementById('add-goal-modal').classList.add('open');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+function selectOpt(btn, groupId){
+  document.querySelectorAll(`#${groupId} .penalty-opt`).forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function saveGoal(){
+  const title = document.getElementById('goal-title-input').value.trim();
+  const hours = parseFloat(document.getElementById('goal-hours-input').value)||2;
+  const penalty = parseInt(document.getElementById('goal-penalty-input').value)||50;
+  const punishment = document.querySelector('#punishment-opts .penalty-opt.selected')?.textContent||'Coin Deduction';
+  if(!title){ showToast('Enter a goal title!','danger'); return; }
+  const goal = {
+    id: Date.now().toString(),
+    title, penalty, punishment,
+    deadline: Date.now() + hours*3600000,
+    status: 'active',
+    createdAt: new Date().toLocaleTimeString(),
+  };
+  state.goals.push(goal);
+  addHistory('start', `Started: "${title}"`);
+  save(); renderAll();
+  closeModal('add-goal-modal');
+  document.getElementById('goal-title-input').value='';
+  showToast('Goal locked in. Now go do it.','success');
+}
+
+function completeGoal(id){
+  const g = state.goals.find(x=>x.id===id);
+  if(!g) return;
+  g.status='done';
+  state.totalDone++;
+  state.xp += 100;
+  updateStreak(true);
+  addCoinLog(10,'Completed: '+g.title);
+  addHistory('done', `Completed: "${g.title}"`);
+  save(); renderAll();
+  showToast('✅ Goal completed! +10 bonus coins, +100 XP','success');
+}
+
+function failGoal(id){
+  const g = state.goals.find(x=>x.id===id);
+  if(!g) return;
+  g.status='failed';
+  state.totalFails++;
+  state.xp = Math.max(0, state.xp - 50);
+  state.penaltyCoins += g.penalty;
+  addCoinLog(-g.penalty,'FAILED: '+g.title);
+  addHistory('fail', `FAILED: "${g.title}"`);
+  updateStreak(false);
+
+  showFailOverlay();
+
+  const punishment = g.punishment||'Coin Deduction';
+  if(punishment.includes('Shame')||punishment.includes('All')){
+    const shameText = generateShameText('You', g.title);
+    document.getElementById('fail-modal-text').textContent = `Goal FAILED: "${g.title}". Penalty: ${g.penalty} coins deducted.`;
+    document.getElementById('auto-shame-text').textContent = shameText;
+    document.getElementById('shame-modal').classList.add('open');
+  }
+
+  if(punishment.includes('Streak')||punishment.includes('All')){
+    state.streak = 0;
+    save();
+    animateCrack();
+  }
+
+  save(); renderAll();
+  showToast(`💀 FAILED — ${g.penalty} coins deducted. Shame on you.`,'danger');
+}
+
+function deleteGoal(id){
+  state.goals = state.goals.filter(g=>g.id!==id);
+  save(); renderAll();
+}
+
+function updateStreak(success){
+  const today = new Date().toDateString();
+  if(success){
+    if(state.lastStreakDate !== today){
+      state.streak++;
+      state.lastStreakDate = today;
+    }
+  } else {
+    state.streak = 0;
+  }
+}
+
+function addCoinLog(amount, reason){
+  state.coinLog.push({ amount, reason, time: new Date().toLocaleString() });
+}
+
+function addHistory(type, text){
+  state.history.push({ type, text, time: new Date().toLocaleString() });
+}
+
+function showFailOverlay(){
+  const ov = document.getElementById('fail-overlay');
+  ov.style.display='block';
+  setTimeout(()=>ov.style.display='none', 1100);
+  document.getElementById('app').classList.add('shake');
+  setTimeout(()=>document.getElementById('app').classList.remove('shake'),500);
+}
+
+function animateCrack(){
+  const el = document.getElementById('dash-streak');
+  if(el){ el.classList.add('crack'); setTimeout(()=>el.classList.remove('crack'),700); }
+}
+
+function generateShameText(name, goalText){
+  const name2 = name||'Someone';
+  const templates = [
+    `🚨 FAILURE ALERT 🚨\n\n${name2} promised to: "${goalText}"\n\nResult: FAILED. Gave up like always.\n\nPenalty applied by Discipline Engine.\n💀 No excuses. Just weakness.`,
+    `😭 PUBLIC NOTICE\n\n${name2} set a goal today:\n"${goalText}"\n\nAnd did NOT complete it.\n\nHeld accountable by Discipline Engine.\nNo mercy. No exceptions.\n#DisciplineEngine #IrfanNishat #FGC`,
+    `⚠️ ACCOUNTABILITY POST ⚠️\n\n${name2} failed to complete:\n"${goalText}"\n\nPenalty coins deducted.\nStreak destroyed.\n\nThis is what procrastination looks like.\n💀 Discipline Engine — Built by Irfan Nishat (FGC)`,
+  ];
+  return templates[Math.floor(Math.random()*templates.length)];
+}
+
+function generateShame(){
+  const name = document.getElementById('shame-name').value||'Anonymous';
+  const goalText = document.getElementById('shame-goal-text').value||'their daily goal';
+  const text = generateShameText(name, goalText);
+  document.getElementById('shame-text').textContent = text;
+  document.getElementById('shame-output').style.display='block';
+  document.getElementById('copy-shame-btn').textContent='📋 Copy & Post This';
+  document.getElementById('copy-shame-btn').classList.remove('copied');
+}
+
+function copyShame(){
+  const text = document.getElementById('shame-text').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('copy-shame-btn');
+    btn.textContent='✅ Copied! Now post it.';
+    btn.classList.add('copied');
+    showToast('Shame copied. Post it and face society.','danger');
+  });
+}
+
+function copyAutoShame(){
+  const text = document.getElementById('auto-shame-text').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('auto-copy-btn');
+    btn.textContent='✅ Copied!'; btn.classList.add('copied');
+  });
+}
+
+function addFriend(){
+  const name = document.getElementById('friend-name-input').value.trim();
+  const id = document.getElementById('friend-id-input').value.trim();
+  if(!name||!id){ showToast('Enter friend name and contact.','danger'); return; }
+  const code = Math.random().toString(36).substr(2,6).toUpperCase();
+  state.friends.push({name,id,code,addedAt:new Date().toLocaleString()});
+  document.getElementById('friend-name-input').value='';
+  document.getElementById('friend-id-input').value='';
+  save(); renderFriends();
+  showToast(`${name} added as enforcer. Code: ${code}`,'success');
+}
+
+function friendApprove(code){
+  showToast('✅ Friend verified! +50 XP for honesty.','success');
+  state.xp+=50; save();
+}
+
+function friendDeny(code){
+  state.penaltyCoins += 30;
+  addCoinLog(-30,'Friend denied your completion!');
+  state.totalFails++;
+  showToast('💀 Friend said NO — 30 coins deducted!','danger');
+  showFailOverlay();
+  save(); renderAll();
+}
+
+function removeFriend(code){
+  state.friends = state.friends.filter(f=>f.code!==code);
+  save(); renderFriends();
+}
+
+function copyFriendMsg(name){
+  const activeGoals = state.goals.filter(g=>g.status==='active').map(g=>g.title).join(', ') || 'their goals';
+  const msg = `Hey ${name}! I'm using Discipline Engine and you're my enforcer.\n\nMy current goals: ${activeGoals}\n\nPlease check on me and reply YES if I've done it, or NO if I haven't. Your answer determines my penalty.\n\nMy enforcer code: (I'll share this with you)\n\n— Sent via Discipline Engine
+   Built by Irfan Hossain Nishat, FGC`;
+  navigator.clipboard.writeText(msg).then(()=>{
+    showToast('Check-in message copied! Send it to your friend.','success');
+  });
+}
+
+function showToast(msg, type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show '+(type||'');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.className='', 3500);
+}
+
+function showPremium(){
+  document.getElementById('premium-modal').classList.add('open');
+}
+
+function updateTimers(){
+  state.goals.filter(g=>g.status==='active').forEach(g=>{
+    const els = document.querySelectorAll(`[id*="timer"][id*="${g.id}"]`);
+    els.forEach(el=>{
+      el.textContent = getTimeLeft(g);
+      el.className = 'goal-timer '+timerClass(g);
+    });
+    if(g.deadline < Date.now() && g.status==='active'){
+      failGoal(g.id);
+    }
+  });
+}
+
+setInterval(()=>{ updateTimers(); }, 1000);
+
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
+});
+
+renderAll();
+</script>
+</body>
+</html>
